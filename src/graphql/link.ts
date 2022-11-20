@@ -44,7 +44,6 @@ export const LinkOneQuery = extendType({
             args: {
                 id: nonNull(intArg())
             },
-            
             resolve(parent, args, context, info) {
                 const { id } = args;
                 const link = links.find(oneLink => oneLink.id == id)
@@ -77,6 +76,31 @@ export const LinkMutation = extendType({
                 };
                 links.push(link);
                 return link;
+            }
+        })
+    }
+})
+
+export const LinkUpdate = extendType({
+    type: "Mutation",
+    definition(t) {
+        t.nonNull.field("update", {
+            type: "Link",
+            args: {
+                id: nonNull(intArg()),
+                description: nonNull(stringArg()),
+                url: nonNull(stringArg()),
+            },
+            
+            resolve(parent, args, context) {
+                const { id, description, url } = args;
+                let link = links.findIndex((obj => obj.id == id))
+                links[link] = {
+                    id: id,
+                    description: description,
+                    url: url
+                }
+                return links[link]
             }
         })
     }
