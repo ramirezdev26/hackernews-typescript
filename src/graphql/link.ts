@@ -94,13 +94,33 @@ export const LinkUpdate = extendType({
             
             resolve(parent, args, context) {
                 const { id, description, url } = args;
-                let link = links.findIndex((obj => obj.id == id))
-                links[link] = {
+                let index = links.findIndex((obj => obj.id == id))
+                links[index] = {
                     id: id,
                     description: description,
                     url: url
                 }
-                return links[link]
+                return links[index]
+            }
+        })
+    }
+})
+
+export const LinkDelete = extendType({
+    type: "Mutation",
+    definition(t) {
+        t.nonNull.field("delete", {
+            type: "Link",
+            args: {
+                id: nonNull(intArg()),
+            },
+            
+            resolve(parent, args, context) {
+                const { id } = args;
+                let link = links.find(oneLink => oneLink.id == id)
+                let index = links.findIndex((obj => obj.id == id))
+                links.splice(index, 1)
+                return link
             }
         })
     }
