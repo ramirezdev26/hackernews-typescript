@@ -11,18 +11,7 @@ export const Link = objectType({
     },
 });
 
-let links: NexusGenObjects['Link'][] = [
-    {
-        id: 1,
-        url: "www.howtographql.com",
-        description: "Fullstack tutorial for GraphQL",
-    },
-    {
-        id: 2,
-        url: "graphql.org",
-        description: "GraphQL official website",
-    },
-];
+
 
 export const LinkQuery = extendType({
     type: "Query",
@@ -30,11 +19,11 @@ export const LinkQuery = extendType({
         t.nonNull.list.nonNull.field("feed", {
             type: "Link",
             resolve(parent, args, context, info) {
-                return links;
-            }
-        })
-    }
-})
+                return context.prisma.link.findMany();
+            },
+        });
+    },
+});
 
 export const LinkOneQuery = extendType({
     type: "Query",
@@ -45,9 +34,15 @@ export const LinkOneQuery = extendType({
                 id: nonNull(intArg())
             },
             resolve(parent, args, context, info) {
-                const { id } = args;
-                const link = links.find(oneLink => oneLink.id == id)
-                return link;
+                try {
+                    return context.prisma.link.findUnique({
+                        where: {id: args.id || undefined} 
+                    });
+                } catch (e) {
+                    throw new Error (
+                        `Post with ID ${args.id} does not exist in the database.`,
+                        )
+                }
             }
         })
     }
@@ -66,20 +61,17 @@ export const LinkMutation = extendType({
             },
             
             resolve(parent, args, context) {
-                const { description, url } = args;
-
-                let idCount = links.length + 1;
-                const link = {
-                    id: idCount,
-                    description: description,
-                    url: url
-                };
-                links.push(link);
-                return link;
-            }
-        })
-    }
-})
+                const newLink = context.prisma.link.create({
+                    data: {
+                        description: args.description,
+                        url: args.url,
+                    },
+                });
+                return newLink
+            },
+        });
+    },
+});
 
 export const LinkUpdate = extendType({
     type: "Mutation",
@@ -93,14 +85,20 @@ export const LinkUpdate = extendType({
             },
             
             resolve(parent, args, context) {
-                const { id, description, url } = args;
-                let index = links.findIndex((obj => obj.id == id))
-                links[index] = {
-                    id: id,
-                    description: description,
-                    url: url
+                    try {
+                    const { id, description, url } = args;
+                    return context.prisma.link.update({
+                        where: { id: id },
+                        data: {
+                            description: args.description,
+                            url: args.url,
+                        }
+                    })
+                        } catch (e){
+                            throw new Error (
+                            `Post with ID ${args.id} does not exist in the database.`,
+                            )
                 }
-                return links[index]
             }
         })
     }
@@ -116,11 +114,15 @@ export const LinkDelete = extendType({
             },
             
             resolve(parent, args, context) {
-                const { id } = args;
-                let link = links.find(oneLink => oneLink.id == id)
-                let index = links.findIndex((obj => obj.id == id))
-                links.splice(index, 1)
-                return link
+                try {
+                    return context.prisma.link.delete({
+                        where: { id: args.id },
+                })
+                } catch (e){
+                    throw new Error (
+                        `Post with ID ${args.id} does not exist in the database.`,
+                        )
+                }
             }
         })
     }
