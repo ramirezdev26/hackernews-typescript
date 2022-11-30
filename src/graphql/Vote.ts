@@ -1,4 +1,6 @@
 import { objectType, extendType, nonNull, intArg } from "nexus";
+import { User } from "@prisma/client";
+
 
 export const Vote = objectType({
     name: "Vote",
@@ -16,6 +18,34 @@ export const VoteMutation = extendType({
             args: {
                 linkId: nonNull(intArg()),
             },
+            async resolve(parent, args, context) {
+                const { userId } = context;
+                const { linkId } = args;
+
+                if (!userId) {
+                    throw new Error("Cannot vote without loggin in.")
+                }
+
+                const link = await context.prisma.link.update({
+                    where: {
+                        id: linkId
+                    },
+                    data: {
+                        voters: {
+                            connect: {
+                                id: userId
+                            }
+                        }
+                    }
+                })
+
+                const user = await context.prisma.user.findUnique({ where: { id: userId } });
+
+                return {
+                    link,
+                    user: user as User
+                }
+            }
         })
     },
 })
